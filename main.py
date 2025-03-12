@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+import io
 
 ### Load api key, prompt and files ###
 load_dotenv()
@@ -43,21 +44,25 @@ print("GenAI client initialized")
 
 ### Process files ###
 for i in range(len(files)):
-    print(f"\rProcessing file {i+1}/{len(files)} ({(i)/len(files)*100:.2f}%)", end="")
+    print(f"Processing file {i+1}/{len(files)} ({(i)/len(files)*100:.2f}%)", end="\r")
     file = files[i]
-    with open(file, "r+") as f:
+    with io.open(file, "r+", encoding="UTF-8") as f:
         old_code = f.read()
         response = client.models.generate_content(
             model=model_id,
             contents=old_code,
             config=types.GenerateContentConfig(
-                max_output_tokens=65536, temperature=0.01, system_instruction=prompt
+                max_output_tokens=8192, temperature=0.01, system_instruction=prompt
             ),
         ).text
-        new_code = response.split("```")[1].split("\n", 1)[1].rsplit("\n", 1)[0]
+        response_split = response.split("```")
+        if len(response_split) < 3:
+            print(f"Invalid response for file: {file}")
+            continue
+        new_code = response_split[1].split("\n", 1)[1].rsplit("\n", 1)[0]
         f.seek(0)
         f.write(new_code)
         f.truncate()
 
-print(f"\rFinished processing {len(files)}/{len(files)} files (100%)")
+print(f"Finished processing {len(files)}/{len(files)} files (100%)")
 ### End process files ###
