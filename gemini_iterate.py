@@ -1,41 +1,12 @@
-import glob
-import sys
-import os
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from arg_parser import parse_args, parse_api_args
 import io
 
-### Load api key, prompt and files ###
-load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
-model_id = os.getenv("GEMINI_MODEL_ID")
-if not api_key:
-    print("Error: API key not provided via environment variable GEMINI_API_KEY")
-    sys.exit(1)
-
-try:
-    path = sys.argv[1]
-    prompt_path = sys.argv[2]
-except IndexError:
-    print("Error: Please provide both path and prompt file arguments")
-    sys.exit(1)
-
-try:
-    with open(prompt_path, "r") as f:
-        prompt = f.read().strip()
-    print(f"Successfully loaded prompt from: {prompt_path}")
-except FileNotFoundError:
-    print(f"Error: Prompt file not found: {prompt_path}")
-    sys.exit(1)
-
-files = glob.glob(path, recursive=True)
-if not files:
-    print(f"Error: No files found matching pattern: {path}")
-    sys.exit(1)
-
-print(f"Found {len(files)} file(s) to process")
-### End load prompt and files ###
+### Loading config ###
+prompt, files = parse_args()
+api_key, model_id = parse_api_args("GEMINI")
+### End loading config ###
 
 ### Initialize GenAI ###
 client = genai.Client(api_key=api_key)
